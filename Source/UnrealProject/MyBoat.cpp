@@ -21,6 +21,7 @@ AMyBoat::AMyBoat()
 
 	MeshComponent->SetupAttachment(GetRootComponent()); //MeshComponent를 RootComponent에 연결하는 과정
 
+	//FrontSpringArm의 위치, 회전, 길이 를 설정
 	FrontSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("FrontSpringArm"));
 	FrontSpringArm->SetupAttachment(MeshComponent);
 	FrontSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 900.0f));
@@ -44,7 +45,7 @@ AMyBoat::AMyBoat()
 	LeftSpringArm->TargetArmLength = 400.f;
 	LeftSpringArm->bEnableCameraLag = true;
 	LeftSpringArm->CameraLagSpeed = 3.0f;*/
-
+	//FrontCamer를 FrontSpringArm에 연결
 	FrontCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FrontCamera"));
 	FrontCamera->SetupAttachment(FrontSpringArm, USpringArmComponent::SocketName);
 
@@ -53,9 +54,9 @@ AMyBoat::AMyBoat()
 
 	LeftCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("LeftCamera"));
 	LeftCamera->SetupAttachment(LeftSpringArm, USpringArmComponent::SocketName);*/
-
 	MouseInput = FVector2D(0.0f, 0.0f);
 
+	//Pawn 클래스인 Boat를 플레이어 0으로 설정
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
 }
@@ -71,11 +72,12 @@ void AMyBoat::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//NewYaw라는 Rotator변수를 통해 MouseInput의 값을 더하여 카메라의 시점 변화 (좌우)
 	FRotator NewYaw = FrontSpringArm->GetComponentRotation();
 	NewYaw.Yaw += MouseInput.X;
 	FrontSpringArm->SetWorldRotation(NewYaw);
 
-
+	//NewYaw라는 Rotator변수를 통해 MouseInput의 값을 더하여 카메라의 시점 변화 (위아래)
 	FRotator NewPitch = FrontSpringArm->GetComponentRotation();
 	NewPitch.Pitch = FMath::Clamp(NewPitch.Pitch + MouseInput.Y, -80.f, 0.f);
 	FrontSpringArm->SetWorldRotation(NewPitch);
@@ -95,12 +97,13 @@ void AMyBoat::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	// 프로젝트 세팅에서 설정한 이름에 해당하는 키보드 입력을 받았을때, 수행할 함수를 바인딩 하는 과정
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AMyBoat::MoveRight);
 	PlayerInputComponent->BindAxis(TEXT("MouseYaw"), this, &AMyBoat::MouseYaw);
 	PlayerInputComponent->BindAxis(TEXT("MousePitch"), this, &AMyBoat::MousePitch);
 }
 
-
+//좌우 회전각도를 설정
 void AMyBoat::MoveRight(float Value)
 {
 	InitialRotation = GetActorRotation();
@@ -113,18 +116,21 @@ void AMyBoat::MoveRight(float Value)
 		AddActorLocalRotation(FRotator(0, Value * (RotationSpeed * 0.0003), 0));
 	}
 	   
-	if (LaterLocation.Yaw - NowLocation.Yaw < 30.0f) // 앞으로가지않고 회전하면 최대 30도까지만 회전이 가능하도록
+	if (LaterLocation.Yaw - NowLocation.Yaw < 30.0f && LaterLocation.Yaw - NowLocation.Yaw > -30.0f) // 앞으로가지않고 회전하면 최대 30도까지만 회전이 가능하도록
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Location: %f"), LaterLocation.Yaw - NowLocation.Yaw);
+		UE_LOG(LogTemp, Warning, TEXT("Rotation: %f"), LaterLocation.Yaw - NowLocation.Yaw);
 		AddActorLocalRotation(FRotator(0, Value * (0.0003 * RotationSpeed), 0));
 	}
+
 }
 
+//마우스를 좌우로 움직일때 값을 받는 함수
 void AMyBoat::MouseYaw(float Value)
 {
 	MouseInput.X = Value;
 }
 
+//마우스를 상하로 움질일때 값을 받는 함수
 void AMyBoat::MousePitch(float Value)
 {
 	MouseInput.Y = Value;
@@ -140,6 +146,7 @@ void AMyBoat::IsFalse()
 	bTrue = false;
 }
 
+//Value값이 1일때와 아닐때 수행하는 작업
 bool AMyBoat::bIsOne(float Value)
 {
 	if (Value == 1)
